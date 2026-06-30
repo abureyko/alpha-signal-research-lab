@@ -74,4 +74,8 @@ alpha-signal-research-lab/
 
 Phase 1 завершена: repository bootstrap.
 
+Phase 2 завершена: data loading.
+
+Реализован `load_ohlcv()`, который загружает daily OHLCV data через `yfinance`, нормализует имена колонок, проверяет обязательные поля, удаляет строки без `close` и возвращает `DataFrame` с datetime index.
+
 Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
