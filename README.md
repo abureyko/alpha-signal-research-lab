@@ -82,4 +82,8 @@ Phase 3 завершена: feature engineering.
 
 Реализован `make_features()`, который создает momentum, volatility, volume, moving-average, RSI и Donchian-position features. Target строится отдельно через next-day return, чтобы не смешивать признаки и будущую информацию.
 
+Phase 4 завершена: baseline strategy signals.
+
+Реализованы Buy & Hold, Donchian Breakout и ML probability threshold signals. Donchian уровни используют `shift(1)`, чтобы сигнал сравнивал цену только с уже известными historical levels.
+
 Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
