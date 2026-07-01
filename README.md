@@ -94,4 +94,8 @@ Phase 6 завершена: performance metrics.
 
 Реализован `summarize_performance()` с total return, annualized return, volatility, Sharpe, max drawdown, Calmar, win rate, profit factor и turnover. Метрики безопасно обрабатывают пустые returns, нулевую volatility и division-by-zero cases.
 
+Phase 7 завершена: walk-forward ML validation.
+
+Реализованы out-of-sample probability predictions через `TimeSeriesSplit`, baseline LogisticRegression, RandomForestClassifier и signal quality metrics: ROC-AUC, precision, average probability и Spearman Information Coefficient.
+
 Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
