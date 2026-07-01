@@ -90,4 +90,8 @@ Phase 5 завершена: backtesting engine.
 
 Реализован long/flat backtester с `position = signal.shift(1)`, close-to-close returns, turnover, transaction costs, slippage и equity curve.
 
+Phase 6 завершена: performance metrics.
+
+Реализован `summarize_performance()` с total return, annualized return, volatility, Sharpe, max drawdown, Calmar, win rate, profit factor и turnover. Метрики безопасно обрабатывают пустые returns, нулевую volatility и division-by-zero cases.
+
 Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
