@@ -3,6 +3,7 @@ __pycache__/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+*.egg-info/
 
 .venv/
 venv/
@@ -18,4 +19,3 @@ data/processed/*
 reports/figures/*
 !reports/figures/.gitkeep
 reports/results.csv
-

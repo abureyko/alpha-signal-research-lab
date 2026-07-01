@@ -1,105 +1,261 @@
 # Alpha Signal Research Lab
 
-Alpha Signal Research Lab - учебный MVP-проект по quant research, в котором проверяется, может ли простой ML-driven trading signal улучшить risk-adjusted returns по сравнению с базовыми стратегиями.
-
-Проект сфокусирован на чистом research-процессе: daily OHLCV data, feature engineering, signal generation, no-look-ahead backtesting, transaction costs, slippage и walk-forward validation.
-
-## Project Goal
-
-Построить простой и читаемый research pipeline, который сравнивает:
-
-- Buy & Hold
-- Donchian Breakout
-- ML probability-based long/flat signal
-
-Главный research question:
-
-Может ли простой ML signal, построенный на momentum, volatility и volume features, улучшить risk-adjusted performance после корректной time-series validation и учета trading costs?
-
-## Educational Scope
+Alpha Signal Research Lab - учебный MVP-проект по quant research, который проверяет, может ли простой ML-driven trading signal улучшить risk-adjusted returns по сравнению с базовыми стратегиями после корректной time-series validation, transaction costs и slippage.
 
 Проект предназначен только для research и educational purposes. Это не financial advice, не investment advice и не утверждение, что какая-либо стратегия является production-profitable.
 
-В первом MVP намеренно не реализуются:
+## Project Overview
 
-- live trading
-- leverage
-- deep learning
-- order book simulation
-- overengineered architecture
+Проект реализует end-to-end research pipeline:
 
-## Planned Methodology
+- загрузка daily OHLCV market data через `yfinance`
+- feature engineering на momentum, volatility и volume signals
+- rule-based baselines
+- walk-forward ML validation
+- no-look-ahead backtesting
+- transaction costs и slippage
+- risk-adjusted performance metrics
+- CSV report и matplotlib plots
 
-Research pipeline будет включать:
+Первый MVP намеренно не включает live trading, leverage, deep learning, order book simulation и сложную production infrastructure.
 
-- загрузку daily OHLCV data через `yfinance`
-- feature engineering только на основе текущих и прошлых данных
-- target construction на основе будущей доходности
-- no-look-ahead backtesting, где позиция открывается на следующем баре после сигнала
-- transaction costs и slippage assumptions
-- walk-forward time-series validation
-- сравнение с rule-based и passive baselines
-- performance reporting с risk-adjusted metrics
+## Target Role Relevance
 
-## Project Structure
+Проект демонстрирует навыки, релевантные для Junior Quant Trader / Junior Quant Researcher:
 
-```text
-alpha-signal-research-lab/
-├── README.md
-├── requirements.txt
-├── data/
-│   ├── raw/
-│   └── processed/
-├── reports/
-│   └── figures/
-├── notebooks/
-├── src/
-│   └── alpha_lab/
-│       ├── __init__.py
-│       ├── data.py
-│       ├── features.py
-│       ├── strategies.py
-│       ├── backtest.py
-│       ├── metrics.py
-│       ├── validation.py
-│       ├── plots.py
-│       └── experiment.py
-└── tests/
-    ├── test_metrics.py
-    ├── test_backtest_no_lookahead.py
-    └── test_costs.py
+- Python research code
+- pandas / NumPy time-series processing
+- scikit-learn ML baseline models
+- walk-forward validation
+- market data handling
+- signal generation
+- backtesting discipline
+- transaction cost awareness
+- pytest coverage for core assumptions
+- reproducible experiment script
+
+## Research Question
+
+Может ли простой ML signal, построенный на momentum, volatility и volume features, дать лучшую risk-adjusted performance, чем Buy & Hold и Donchian Breakout baseline, после transaction costs и walk-forward validation?
+
+## Methodology
+
+Assets:
+
+- `BTC-USD`
+- `ETH-USD`
+- `SPY`
+
+Data:
+
+- daily OHLCV data from Yahoo Finance via `yfinance`
+- normalized columns: `open`, `high`, `low`, `close`, `volume`
+- rows without valid `close` are removed
+
+Research process:
+
+1. Load and clean OHLCV data.
+2. Build features using only current and past observations.
+3. Create `future_return_1d` and binary `target`.
+4. Generate baseline strategy signals.
+5. Generate out-of-sample ML probabilities with walk-forward validation.
+6. Convert probabilities into long/flat signal.
+7. Backtest all strategies with multiple cost assumptions.
+8. Compare metrics and save reports.
+
+## Features
+
+The MVP uses:
+
+- `ret_1d`
+- `ret_3d`
+- `ret_7d`
+- `volatility_7d`
+- `volatility_21d`
+- `volume_zscore_20`
+- `price_vs_ma_20`
+- `price_vs_ma_50`
+- `rsi_14`
+- `donchian_position_20`
+
+Target:
+
+- `future_return_1d`
+- `target = 1` if `future_return_1d > cost_threshold`, else `0`
+
+Important: `future_return_1d` and `target` are never used as model features.
+
+## Strategies
+
+Buy & Hold:
+
+- always long
+
+Donchian Breakout:
+
+- entry when close breaks above previous rolling high
+- exit when close breaks below previous rolling low
+- rolling high and low use `.shift(1)` to avoid look-ahead bias
+- long/flat only
+
+ML Logistic Regression:
+
+- predicts out-of-sample probability of positive next-day target
+- signal is long when probability is above threshold
+- long/flat only
+
+## Validation Approach
+
+The ML pipeline uses `TimeSeriesSplit`, not random split.
+
+For each split:
+
+- train on past data
+- predict probabilities on future data
+- collect only out-of-sample predictions
+
+Models:
+
+- `LogisticRegression` with `StandardScaler` inside a scikit-learn `Pipeline`
+- `RandomForestClassifier` available as a second model
+
+Signal quality metrics:
+
+- ROC-AUC when both classes are present
+- precision
+- average predicted probability
+- Spearman Information Coefficient
+
+## Backtesting Assumptions
+
+The backtester is intentionally simple and explicit:
+
+- close-to-close returns
+- long/flat only
+- no leverage
+- signal is generated at time `t`
+- position is applied as `signal.shift(1)`
+- no same-bar execution
+- no order book simulation
+- no partial fills
+- no latency model
+
+Core no-look-ahead rule:
+
+```python
+position = signal.shift(1)
 ```
 
-## Current Status
+## Transaction Costs
 
-Phase 1 завершена: repository bootstrap.
+Costs are applied when position changes:
 
-Phase 2 завершена: data loading.
+```python
+turnover = abs(position - previous_position)
+cost = turnover * (fee_bps + slippage_bps) / 10000
+```
 
-Реализован `load_ohlcv()`, который загружает daily OHLCV data через `yfinance`, нормализует имена колонок, проверяет обязательные поля, удаляет строки без `close` и возвращает `DataFrame` с datetime index.
+Venue configs:
 
-Phase 3 завершена: feature engineering.
+- `no_costs`: `fee_bps=0`, `slippage_bps=0`
+- `binance_like`: `fee_bps=10`, `slippage_bps=2`
+- `high_cost`: `fee_bps=20`, `slippage_bps=8`
 
-Реализован `make_features()`, который создает momentum, volatility, volume, moving-average, RSI и Donchian-position features. Target строится отдельно через next-day return, чтобы не смешивать признаки и будущую информацию.
+## Metrics
 
-Phase 4 завершена: baseline strategy signals.
+The report includes:
 
-Реализованы Buy & Hold, Donchian Breakout и ML probability threshold signals. Donchian уровни используют `shift(1)`, чтобы сигнал сравнивал цену только с уже известными historical levels.
+- total return
+- annualized return
+- annualized volatility
+- Sharpe ratio
+- max drawdown
+- Calmar ratio
+- win rate
+- profit factor
+- turnover
 
-Phase 5 завершена: backtesting engine.
+Metrics handle empty returns, zero volatility and division-by-zero cases safely.
 
-Реализован long/flat backtester с `position = signal.shift(1)`, close-to-close returns, turnover, transaction costs, slippage и equity curve.
+## How To Run
 
-Phase 6 завершена: performance metrics.
+Create and activate a virtual environment, then install dependencies:
 
-Реализован `summarize_performance()` с total return, annualized return, volatility, Sharpe, max drawdown, Calmar, win rate, profit factor и turnover. Метрики безопасно обрабатывают пустые returns, нулевую volatility и division-by-zero cases.
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+```
 
-Phase 7 завершена: walk-forward ML validation.
+Run tests:
 
-Реализованы out-of-sample probability predictions через `TimeSeriesSplit`, baseline LogisticRegression, RandomForestClassifier и signal quality metrics: ROC-AUC, precision, average probability и Spearman Information Coefficient.
+```bash
+pytest
+```
 
-Phase 8 завершена: plots.
+Run the experiment:
 
-Реализованы matplotlib-графики equity curves для сравнения стратегий и drawdown chart для анализа просадок. Функции сохраняют графики в `reports/figures`.
+```bash
+python -m alpha_lab.experiment
+```
 
-Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
+Outputs:
+
+- `reports/results.csv`
+- `reports/figures/*_equity_curves.png`
+- `reports/figures/*_ml_logreg_drawdown.png`
+
+## Example Results
+
+Example results from one MVP run showed that transaction costs materially reduced performance for higher-turnover ML signals. This is expected and is one of the main research lessons of the project.
+
+Do not treat these example outputs as stable investment conclusions. Results depend on data availability, date range, model settings and market regime.
+
+## Tests
+
+The project includes pytest tests for:
+
+- no-look-ahead position shifting
+- transaction cost impact
+- max drawdown calculation
+- profit factor calculation
+
+Current test command:
+
+```bash
+pytest
+```
+
+## Limitations
+
+This MVP has important limitations:
+
+- daily OHLCV data only
+- no intraday data
+- no order book
+- no partial fills
+- fixed slippage model
+- no latency simulation
+- no funding rates
+- no borrow costs
+- no live trading
+- no leverage
+- no hyperparameter search
+- no purged cross-validation
+- results are educational/research only
+
+## Next Steps
+
+Potential extensions:
+
+- add intraday data via `ccxt`
+- add numba-accelerated backtest loop
+- add multiprocessing for grid search
+- add purged time-series split
+- add regime analysis
+- add feature importance
+- add Streamlit dashboard
+- add more robust data caching
+- add parameter sensitivity reports
+
