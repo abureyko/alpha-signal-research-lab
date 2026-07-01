@@ -98,4 +98,8 @@ Phase 7 завершена: walk-forward ML validation.
 
 Реализованы out-of-sample probability predictions через `TimeSeriesSplit`, baseline LogisticRegression, RandomForestClassifier и signal quality metrics: ROC-AUC, precision, average probability и Spearman Information Coefficient.
 
+Phase 8 завершена: plots.
+
+Реализованы matplotlib-графики equity curves для сравнения стратегий и drawdown chart для анализа просадок. Функции сохраняют графики в `reports/figures`.
+
 Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
