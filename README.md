@@ -86,4 +86,8 @@ Phase 4 завершена: baseline strategy signals.
 
 Реализованы Buy & Hold, Donchian Breakout и ML probability threshold signals. Donchian уровни используют `shift(1)`, чтобы сигнал сравнивал цену только с уже известными historical levels.
 
+Phase 5 завершена: backtesting engine.
+
+Реализован long/flat backtester с `position = signal.shift(1)`, close-to-close returns, turnover, transaction costs, slippage и equity curve.
+
 Дальше реализация будет идти маленькими фазами, чтобы каждый research-компонент был понятен, проверяем и не превращался в магический черный ящик.
