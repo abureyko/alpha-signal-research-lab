@@ -1,45 +1,45 @@
 # Alpha Signal Research Lab
 
-Учебный research-проект по проверке простых trading signals на daily OHLCV данных.
+Учебный исследовательский проект по проверке простых торговых сигналов на дневных OHLCV-данных.
 
-Проект не является инвестиционной рекомендацией. Результаты ниже описывают один воспроизводимый исследовательский прогон и не доказывают production-profitability стратегии.
+Проект не является инвестиционной рекомендацией. Результаты ниже описывают один воспроизводимый исследовательский прогон и не доказывают, что какая-либо стратегия пригодна для реальной торговли.
 
-## Research Question
+## Исследовательский вопрос
 
-Может ли простой ML-сигнал на momentum, volatility и volume features улучшить risk-adjusted performance относительно `Buy & Hold` и `Donchian Breakout` после walk-forward validation, transaction costs и slippage?
+Может ли простой ML-сигнал на признаках моментума, волатильности и объема улучшить риск-скорректированную доходность относительно `Buy & Hold` и `Donchian Breakout` после walk-forward validation, комиссий и проскальзывания?
 
-Короткий ответ по текущему прогону: **нет устойчивого подтверждения, что ML-сигнал лучше baseline-стратегий после costs**. На crypto assets лучше выглядел `Donchian Breakout`, а на `SPY` лучше выглядел `Buy & Hold`. ML-сигнал оказался чувствителен к transaction costs из-за высокого turnover.
+Короткий вывод по текущему прогону: **устойчивого подтверждения, что ML-сигнал лучше базовых стратегий после учета издержек, нет**. На `BTC-USD` и `ETH-USD` лучше выглядел `Donchian Breakout`, а на `SPY` лучше выглядел `Buy & Hold`. ML-сигнал оказался чувствителен к торговым издержкам из-за высокого оборота позиции.
 
-## Project Scope
+## Область проекта
 
-Что реально реализовано:
+Что реализовано:
 
-- загрузка daily OHLCV через `yfinance`;
-- assets: `BTC-USD`, `ETH-USD`, `SPY`;
-- feature engineering без look-ahead;
-- `Buy & Hold` baseline;
-- `Donchian Breakout` baseline;
+- загрузка дневных OHLCV-данных через `yfinance`;
+- инструменты: `BTC-USD`, `ETH-USD`, `SPY`;
+- построение признаков без заглядывания в будущее;
+- базовая стратегия `Buy & Hold`;
+- базовая стратегия `Donchian Breakout`;
 - ML-сигнал через walk-forward `LogisticRegression`;
-- доступная альтернативная модель `RandomForestClassifier`;
-- long/flat backtest;
-- transaction costs и slippage;
-- performance metrics;
-- CSV report;
-- matplotlib-графики;
-- pytest-тесты для ключевых assumptions.
+- альтернативная модель `RandomForestClassifier`;
+- long/flat бэктест;
+- комиссии и проскальзывание;
+- метрики эффективности;
+- CSV-отчет;
+- графики через `matplotlib`;
+- `pytest`-тесты для ключевых предположений бэктеста.
 
 Что не реализовано:
 
-- live trading;
-- leverage;
-- order book simulation;
-- intraday data;
-- latency simulation;
-- partial fills;
+- реальная торговля;
+- кредитное плечо;
+- симуляция стакана заявок;
+- внутридневные данные;
+- симуляция задержек;
+- частичное исполнение заявок;
 - funding rates;
 - purged cross-validation.
 
-## Repository Structure
+## Структура репозитория
 
 ```text
 .
@@ -65,19 +65,19 @@
     └── test_metrics.py
 ```
 
-## Methodology
+## Методология
 
-### Data
+### Данные
 
-Data source: Yahoo Finance via `yfinance`.
+Источник данных: Yahoo Finance через `yfinance`.
 
-Universe:
+Инструменты:
 
 - `BTC-USD`
 - `ETH-USD`
 - `SPY`
 
-The loader normalizes columns to:
+Загрузчик данных приводит названия колонок к единому формату:
 
 - `open`
 - `high`
@@ -85,13 +85,13 @@ The loader normalizes columns to:
 - `close`
 - `volume`
 
-Rows without valid `close` are removed.
+Строки без корректного `close` удаляются.
 
-### Features
+### Признаки
 
-Feature file: `src/alpha_lab/features.py`.
+Файл с признаками: `src/alpha_lab/features.py`.
 
-Features:
+Используемые признаки:
 
 - `ret_1d`
 - `ret_3d`
@@ -104,82 +104,82 @@ Features:
 - `rsi_14`
 - `donchian_position_20`
 
-Target:
+Целевая переменная:
 
 - `future_return_1d`
-- `target = 1` if `future_return_1d > cost_threshold`, else `0`
+- `target = 1`, если `future_return_1d > cost_threshold`, иначе `0`
 
-Important: `future_return_1d` and `target` are not used as model features.
+Важно: `future_return_1d` и `target` не используются как признаки модели.
 
-### Strategies
+### Стратегии
 
 `Buy & Hold`:
 
-- always long.
+- всегда находится в long-позиции.
 
 `Donchian Breakout`:
 
-- enter long when close breaks above previous rolling high;
-- exit when close breaks below previous rolling low;
-- rolling high and low use `.shift(1)`.
+- вход в long при пробое предыдущего rolling high;
+- выход при пробое предыдущего rolling low;
+- rolling high и rolling low используют `.shift(1)`, чтобы не использовать текущую цену в историческом уровне.
 
 `ML Logistic Regression`:
 
-- train with walk-forward validation;
-- collect out-of-sample probabilities;
-- go long when probability is above threshold.
+- обучается через walk-forward validation;
+- собирает out-of-sample вероятности;
+- открывает long-позицию, если вероятность выше заданного порога.
 
-### Validation
+### Валидация
 
-The ML pipeline uses `TimeSeriesSplit`, not random split.
+ML-пайплайн использует `TimeSeriesSplit`, а не случайное разбиение.
 
-For each split:
+Для каждого split:
 
-1. Train on past data.
-2. Predict on the next future block.
-3. Store only out-of-sample probabilities.
+1. Модель обучается на прошлом участке данных.
+2. Модель предсказывает следующий будущий участок.
+3. В итоговый сигнал попадают только out-of-sample вероятности.
 
-This avoids training on future observations.
+Такой подход снижает риск обучения на будущих наблюдениях.
 
-### Backtest
+### Бэктест
 
-Backtest file: `src/alpha_lab/backtest.py`.
+Файл бэктеста: `src/alpha_lab/backtest.py`.
 
-Assumptions:
+Предположения:
 
-- close-to-close returns;
-- long/flat only;
-- no leverage;
-- no same-bar execution;
-- no order book simulation;
-- no partial fills.
+- доходности считаются close-to-close;
+- только long/flat;
+- без кредитного плеча;
+- без исполнения на том же баре;
+- без симуляции стакана;
+- без частичных исполнений.
 
-Core no-look-ahead rule:
+Ключевое правило против look-ahead bias:
 
 ```python
 position = signal.shift(1)
 ```
 
-Costs:
+Издержки:
 
 ```python
 turnover = abs(position - previous_position)
 costs = turnover * (fee_bps + slippage_bps) / 10000
 ```
 
-Cost scenarios:
+Сценарии издержек:
 
 - `no_costs`: `fee_bps=0`, `slippage_bps=0`;
 - `binance_like`: `fee_bps=10`, `slippage_bps=2`;
 - `high_cost`: `fee_bps=20`, `slippage_bps=8`.
 
-## Results
+## Результаты
 
-Full output is stored in [`reports/results.csv`](reports/results.csv).
+Полный отчет сохранен в [`reports/results.csv`](reports/results.csv).
 
-The table below shows the `binance_like` cost scenario.
+Ниже показан сценарий издержек `binance_like`.
 
-| Asset | Strategy | Total Return | Sharpe | Max Drawdown | Win Rate | Profit Factor | Turnover |
+| Инструмент | Стратегия | Общая доходность | Sharpe | Максимальная просадка | Доля прибыльных дней | Profit Factor | Оборот |
 |---|---|---:|---:|---:|---:|---:|---:|
 | BTC-USD | Donchian Breakout | 9.325 | 0.969 | -0.384 | 0.506 | 1.283 | 0.018 |
 | BTC-USD | ML Logistic Regression | 2.341 | 0.727 | -0.384 | 0.338 | 1.394 | 0.137 |
@@ -191,49 +191,49 @@ The table below shows the `binance_like` cost scenario.
 | SPY | Donchian Breakout | 0.256 | 0.424 | -0.208 | 0.540 | 1.088 | 0.025 |
 | SPY | ML Logistic Regression | -0.149 | -0.114 | -0.291 | 0.341 | 0.951 | 0.119 |
 
-### Main Observations
+### Основные наблюдения
 
-1. `Donchian Breakout` had the highest Sharpe on `BTC-USD` and `ETH-USD` under `binance_like` costs.
-2. `Buy & Hold` had the highest Sharpe on `SPY` under `binance_like` costs.
-3. The ML signal did not consistently outperform baselines after costs.
-4. ML turnover was much higher than baseline turnover, which made the strategy more sensitive to fees and slippage.
-5. On `SPY`, the ML strategy became negative after `binance_like` costs.
+1. `Donchian Breakout` имел лучший Sharpe на `BTC-USD` и `ETH-USD` в сценарии `binance_like`.
+2. `Buy & Hold` имел лучший Sharpe на `SPY` в сценарии `binance_like`.
+3. ML-сигнал не показал устойчивого превосходства над базовыми стратегиями после учета издержек.
+4. Оборот ML-стратегии был заметно выше оборота базовых стратегий, поэтому результат сильнее ухудшался от комиссий и проскальзывания.
+5. На `SPY` ML-стратегия стала отрицательной после учета издержек `binance_like`.
 
-### ML Cost Sensitivity
+### Чувствительность ML-стратегии к издержкам
 
-ML total return by cost scenario:
+Общая доходность ML-стратегии по сценариям издержек:
 
-| Asset | No Costs | Binance-like | High Cost |
+| Инструмент | Без издержек | Binance-like | Высокие издержки |
 |---|---:|---:|---:|
 | BTC-USD | 4.512 | 2.341 | 0.712 |
 | ETH-USD | 8.471 | 4.313 | 1.456 |
 | SPY | 0.146 | -0.149 | -0.428 |
 
-This is the main research lesson of the MVP: a signal can look reasonable before costs but degrade materially after realistic turnover costs.
+Главный вывод MVP: сигнал может выглядеть приемлемо до учета издержек, но заметно ухудшаться после учета реалистичного оборота позиции.
 
-## Charts
+## Графики
 
 BTC:
 
-![BTC equity curves](reports/figures/BTC-USD_equity_curves.png)
+![Кривые капитала BTC](reports/figures/BTC-USD_equity_curves.png)
 
-![BTC ML drawdown](reports/figures/BTC-USD_ml_logreg_drawdown.png)
+![Просадка ML BTC](reports/figures/BTC-USD_ml_logreg_drawdown.png)
 
 ETH:
 
-![ETH equity curves](reports/figures/ETH-USD_equity_curves.png)
+![Кривые капитала ETH](reports/figures/ETH-USD_equity_curves.png)
 
-![ETH ML drawdown](reports/figures/ETH-USD_ml_logreg_drawdown.png)
+![Просадка ML ETH](reports/figures/ETH-USD_ml_logreg_drawdown.png)
 
 SPY:
 
-![SPY equity curves](reports/figures/SPY_equity_curves.png)
+![Кривые капитала SPY](reports/figures/SPY_equity_curves.png)
 
-![SPY ML drawdown](reports/figures/SPY_ml_logreg_drawdown.png)
+![Просадка ML SPY](reports/figures/SPY_ml_logreg_drawdown.png)
 
-## How To Run
+## Как запустить
 
-Create environment:
+Создать окружение:
 
 ```bash
 python -m venv .venv
@@ -242,64 +242,62 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-Run tests:
+Запустить тесты:
 
 ```bash
 pytest
 ```
 
-Run experiment:
+Запустить эксперимент:
 
 ```bash
 python -m alpha_lab.experiment
 ```
 
-## Tests
+## Тесты
 
-Current tests:
+Текущие тесты проверяют:
 
-- no-look-ahead position shifting;
-- transaction costs reduce net returns when turnover is positive;
-- max drawdown on a known equity curve;
-- profit factor on a simple return series.
+- сдвиг позиции на один бар относительно сигнала;
+- ухудшение доходности при более высоких издержках и положительном обороте;
+- расчет максимальной просадки на известной кривой капитала;
+- расчет Profit Factor на простом ряде доходностей.
 
-Current local result:
+Локальный результат тестов:
 
 ```text
 4 passed
 ```
 
-## Limitations
+## Ограничения
 
-This MVP has important limitations:
+Ограничения текущего MVP:
 
-- daily OHLCV only;
-- no intraday data;
-- no order book;
-- no partial fills;
-- fixed slippage model;
-- no latency simulation;
-- no funding rates;
-- no borrow costs;
-- no live trading;
-- no leverage;
-- no hyperparameter search;
-- no purged cross-validation;
-- limited asset universe;
-- dependency on Yahoo Finance data availability and adjustments.
+- только дневные OHLCV-данные;
+- нет внутридневных данных;
+- нет стакана заявок;
+- нет частичных исполнений;
+- фиксированная модель проскальзывания;
+- нет симуляции задержек;
+- нет funding rates;
+- нет borrow costs;
+- нет реальной торговли;
+- нет кредитного плеча;
+- нет подбора гиперпараметров;
+- нет purged cross-validation;
+- ограниченный набор инструментов;
+- зависимость от доступности и качества данных Yahoo Finance.
 
-The results should be read as an educational research exercise, not as trading advice.
+Результаты следует рассматривать как учебное исследование, а не как торговую рекомендацию.
 
-## Next Steps
+## Возможные следующие шаги
 
-Possible extensions:
-
-- add intraday data via `ccxt`;
-- add data caching;
-- add numba-accelerated backtest loop;
-- add purged time-series split;
-- add parameter sensitivity analysis;
-- add feature importance;
-- add regime analysis;
-- add Streamlit dashboard.
+- добавить внутридневные данные через `ccxt`;
+- добавить кэширование данных;
+- добавить ускоренный бэктест через `numba`;
+- добавить purged time-series split;
+- добавить анализ чувствительности параметров;
+- добавить feature importance;
+- добавить анализ рыночных режимов;
+- добавить Streamlit dashboard.
 
